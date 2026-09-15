@@ -1,15 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl  = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey  = import.meta.env.VITE_SUPABASE_ANON_KEY
+// ─── ENV CHECK ────────────────────────────────────────────────
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseKey) {
-  console.warn('⚠️  Supabase env vars missing. Copy .env.example → .env dan isi nilainya.')
-}
+export const ENV_MISSING = !supabaseUrl || !supabaseKey
 
-export const supabase = createClient(supabaseUrl || '', supabaseKey || '')
+// Jika env vars tidak ada → jangan crash, export client dummy
+export const supabase = ENV_MISSING
+  ? null
+  : createClient(supabaseUrl, supabaseKey)
 
-// ─── Auth helpers ──────────────────────────────────────
+// ─── Auth helpers ──────────────────────────────────────────────
 export async function signIn(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) throw error
@@ -26,16 +28,12 @@ export async function getSession() {
   return data.session
 }
 
-// ─── Harian ────────────────────────────────────────────
+// ─── Harian ────────────────────────────────────────────────────
 export async function fetchHarian(bulan, tahun) {
   const from = `${tahun}-${String(bulan).padStart(2,'0')}-01`
   const to   = `${tahun}-${String(bulan).padStart(2,'0')}-31`
   const { data, error } = await supabase
-    .from('harian')
-    .select('*')
-    .gte('tgl', from)
-    .lte('tgl', to)
-    .order('tgl')
+    .from('harian').select('*').gte('tgl', from).lte('tgl', to).order('tgl')
   if (error) throw error
   return data
 }
@@ -45,16 +43,18 @@ export async function upsertHarian(row) {
   if (error) throw error
 }
 
-// ─── Pengeluaran ───────────────────────────────────────
+export async function fetchAllHarian() {
+  const { data, error } = await supabase.from('harian').select('*').order('tgl')
+  if (error) throw error
+  return data
+}
+
+// ─── Pengeluaran ───────────────────────────────────────────────
 export async function fetchPengeluaran(bulan, tahun) {
   const from = `${tahun}-${String(bulan).padStart(2,'0')}-01`
   const to   = `${tahun}-${String(bulan).padStart(2,'0')}-31`
   const { data, error } = await supabase
-    .from('pengeluaran')
-    .select('*')
-    .gte('tgl', from)
-    .lte('tgl', to)
-    .order('tgl')
+    .from('pengeluaran').select('*').gte('tgl', from).lte('tgl', to).order('tgl')
   if (error) throw error
   return data
 }
@@ -70,7 +70,13 @@ export async function deletePengeluaran(id) {
   if (error) throw error
 }
 
-// ─── Penarikan ─────────────────────────────────────────
+export async function fetchAllPengeluaran() {
+  const { data, error } = await supabase.from('pengeluaran').select('*').order('tgl')
+  if (error) throw error
+  return data
+}
+
+// ─── Penarikan ─────────────────────────────────────────────────
 export async function fetchPenarikan() {
   const { data, error } = await supabase.from('penarikan').select('*').order('tgl', { ascending: false })
   if (error) throw error
@@ -88,7 +94,7 @@ export async function deletePenarikan(id) {
   if (error) throw error
 }
 
-// ─── Pemasok ───────────────────────────────────────────
+// ─── Pemasok ───────────────────────────────────────────────────
 export async function fetchPemasok() {
   const { data, error } = await supabase.from('pemasok').select('*').order('nama')
   if (error) throw error
@@ -111,12 +117,10 @@ export async function deletePemasok(id) {
   if (error) throw error
 }
 
-// ─── Titipan ───────────────────────────────────────────
+// ─── Titipan ───────────────────────────────────────────────────
 export async function fetchTitipan() {
   const { data, error } = await supabase
-    .from('titipan')
-    .select('*, pemasok:pemasok_id(nama)')
-    .order('nama')
+    .from('titipan').select('*, pemasok:pemasok_id(nama)').order('nama')
   if (error) throw error
   return data
 }
@@ -137,15 +141,12 @@ export async function deleteTitipan(id) {
   if (error) throw error
 }
 
-// ─── Titipan Harian ────────────────────────────────────
+// ─── Titipan Harian ────────────────────────────────────────────
 export async function fetchTitipanHarian(bulan, tahun) {
   const from = `${tahun}-${String(bulan).padStart(2,'0')}-01`
   const to   = `${tahun}-${String(bulan).padStart(2,'0')}-31`
   const { data, error } = await supabase
-    .from('titipan_harian')
-    .select('*')
-    .gte('tgl', from)
-    .lte('tgl', to)
+    .from('titipan_harian').select('*').gte('tgl', from).lte('tgl', to)
   if (error) throw error
   return data
 }
@@ -156,17 +157,7 @@ export async function fetchAllTitipanHarian() {
   return data
 }
 
-export async function upsertTitipanHarian(row) {
-  const { error } = await supabase.from('titipan_harian').upsert(row)
-  if (error) throw error
-}
-
-export async function deleteTitipanHarian(id) {
-  const { error } = await supabase.from('titipan_harian').delete().eq('id', id)
-  if (error) throw error
-}
-
-// ─── Piutang ───────────────────────────────────────────
+// ─── Piutang ───────────────────────────────────────────────────
 export async function fetchPiutang() {
   const { data, error } = await supabase.from('piutang').select('*').order('tgl', { ascending: false })
   if (error) throw error
@@ -187,17 +178,4 @@ export async function updatePiutang(id, row) {
 export async function deletePiutang(id) {
   const { error } = await supabase.from('piutang').delete().eq('id', id)
   if (error) throw error
-}
-
-// ─── Dashboard: semua harian tanpa filter bulan ────────
-export async function fetchAllHarian() {
-  const { data, error } = await supabase.from('harian').select('*').order('tgl')
-  if (error) throw error
-  return data
-}
-
-export async function fetchAllPengeluaran() {
-  const { data, error } = await supabase.from('pengeluaran').select('*').order('tgl')
-  if (error) throw error
-  return data
 }

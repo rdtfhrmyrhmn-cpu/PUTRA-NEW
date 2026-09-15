@@ -4,13 +4,49 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Kantin Putra — Laporan Keuangan</title>
-  <link rel="icon" type="image/x-icon" href="/icon.ico"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* Splash screen — tampil SEBELUM JS selesai load */
+    #splash {
+      position: fixed; inset: 0;
+      background: #0f172a;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 14px;
+      z-index: 9999; transition: opacity .4s ease;
+    }
+    #splash.hide { opacity: 0; pointer-events: none; }
+    .sp-icon { font-size: 52px; animation: sp-float 2s ease-in-out infinite; }
+    @keyframes sp-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    .sp-title { font-family: Inter, system-ui, sans-serif; font-size: 20px;
+                font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+    .sp-bar { width: 160px; height: 3px; background: rgba(255,255,255,0.08);
+              border-radius: 10px; overflow: hidden; }
+    .sp-fill { height: 100%; background: #3b82f6; border-radius: 10px;
+               animation: sp-load 1.4s ease-in-out infinite; }
+    @keyframes sp-load { 0%{width:0%} 60%{width:85%} 100%{width:100%} }
+  </style>
 </head>
-<body>
+<body style="margin:0;background:#0f172a;">
+  <!-- Splash: hilang setelah JS selesai -->
+  <div id="splash">
+    <div class="sp-icon">🍽️</div>
+    <div class="sp-title">Kantin Putra</div>
+    <div class="sp-bar"><div class="sp-fill"></div></div>
+  </div>
+
   <div id="app"></div>
+
   <script type="module" src="/src/main.js"></script>
+  <script>
+    // Sembunyikan splash setelah JS selesai render
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const s = document.getElementById('splash')
+        if (s) { s.classList.add('hide'); setTimeout(() => s.remove(), 450) }
+      }, 600)
+    })
+  </script>
 </body>
 </html>
